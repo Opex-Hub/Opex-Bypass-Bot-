@@ -367,7 +367,7 @@ async def supported(ctx):
 
 # -------------------- Run Bot --------------------
 if __name__ == "__main__":
-    if TOKEN == "MTUyMzQxNDc2NDA0MTI3NzUzMA.G9hyHp.8vuJWZaU587nqgGfxuC2OXa2fW4eg968u0jIRo":
+    if TOKEN == "Nil":
         print("❌ Please set your bot token in the TOKEN variable.")
         sys.exit(1)
 
