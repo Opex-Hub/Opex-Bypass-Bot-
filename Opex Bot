@@ -1,3 +1,4 @@
+fix ts
 #!/usr/bin/env python3
 """
 Opex Bypass - Discord Bot
@@ -306,7 +307,7 @@ class OpexBypass:
 
 
 # -------------------- Discord Bot --------------------
-TOKEN = "MTUyMzQxNDc2NDA0MTI3NzUzMA.G9hyHp.8vuJWZaU587nqgGfxuC2OXa2fW4eg968u0jIRo"  # Replace with your bot token
+TOKEN = "YOUR_BOT_TOKEN_HERE"  # Replace with your bot token
 
 PREFIX = "!"
 
@@ -367,8 +368,8 @@ async def supported(ctx):
 
 # -------------------- Run Bot --------------------
 if __name__ == "__main__":
-    if TOKEN == "Nil":
+    if TOKEN == "YOUR_BOT_TOKEN_HERE":
         print("❌ Please set your bot token in the TOKEN variable.")
         sys.exit(1)
 
-    bot.run(TOKEN)  # ✅ Fixed: use the TOKEN variable
+    bot.run(TOKEN)
