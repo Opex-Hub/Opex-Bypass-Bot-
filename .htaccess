@@ -1,0 +1,29 @@
+# 1. Prevent directory listing (so people can't see all files in the folder)
+Options -Indexes
+
+# 2. Increase PHP execution time and input time
+# Sometimes tracing long URL chains takes longer than the default 30 seconds
+<IfModule mod_php7.c>
+    php_value max_execution_time 120
+    php_value max_input_time 120
+</IfModule>
+<IfModule mod_php.c>
+    php_value max_execution_time 120
+    php_value max_input_time 120
+</IfModule>
+
+# 3. Security: Hide Apache version and OS info
+ServerTokens Prod
+ServerSignature Off
+
+# 4. Security: Prevent MIME type sniffing
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "no-referrer-when-downgrade"
+</IfModule>
+
+# 5. Optional: Force HTTPS (Uncomment if your site has an SSL certificate)
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
