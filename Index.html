@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opex Hub | Link Inspector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(ellipse at bottom, #0f172a 0%, #020617 100%);
+            color: #e2e8f0;
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* --- Shooting Star Animation --- */
+        .night-sky {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            transform: rotateZ(45deg);
+        }
+        .star {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            height: 2px;
+            background: linear-gradient(-45deg, #3b82f6, rgba(0, 0, 255, 0));
+            border-radius: 999px;
+            filter: drop-shadow(0 0 6px #60a5fa);
+            animation: tail 3s ease-in-out infinite, falling 3s ease-in-out infinite;
+        }
+        @keyframes tail {
+            0% { width: 0; }
+            30% { width: 100px; }
+            100% { width: 0; }
+        }
+        @keyframes falling {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(300px); }
+        }
+        /* Generate staggered stars */
+        .star:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+        .star:nth-child(2) { top: 30%; left: 50%; animation-delay: 1.2s; }
+        .star:nth-child(3) { top: 70%; left: 20%; animation-delay: 2.4s; }
+        .star:nth-child(4) { top: 20%; left: 80%; animation-delay: 0.8s; }
+        .star:nth-child(5) { top: 80%; left: 60%; animation-delay: 1.7s; }
+
+        /* --- UI Elements --- */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 30px rgba(37, 99, 235, 0.1);
+        }
+        .step-line {
+            border-left: 2px solid #3b82f6;
+            margin-left: 11px;
+            padding-left: 20px;
+            padding-bottom: 1rem;
+        }
+        .step-line:last-child {
+            border-left: 2px solid transparent;
+        }
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            background: #3b82f6;
+            border-radius: 50%;
+            position: absolute;
+            left: -5px;
+            margin-top: 4px;
+            box-shadow: 0 0 10px #3b82f6;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center relative">
+
+    <!-- Shooting Stars Background -->
+    <div class="night-sky">
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="z-10 w-full max-w-2xl px-4 py-12">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-black tracking-tight bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent mb-2">
+                OpexHub.gg
+            </h1>
+            <p class="text-blue-200/60 font-medium tracking-wide text-sm uppercase">Secure Link Inspector</p>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    placeholder="https://auth.platorelay.com/a?d=..." 
+                    class="flex-1 bg-slate-900/80 border border-blue-900/50 rounded-xl px-4 py-3 text-sm text-blue-100 placeholder-blue-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono"
+                >
+                <button 
+                    onclick="inspectUrl()"
+                    class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-semibold shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                    <span id="btnText">Trace Path</span>
+                    <svg id="spinner" class="animate-spin h-4 w-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" stroke-width="4" stroke-dasharray="32" stroke-linecap="round"></circle>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Results Area -->
+            <div id="resultsArea" class="mt-8 hidden">
+                <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">Redirection Chain</h3>
+                <div id="chainContainer" class="relative text-sm font-mono text-slate-300">
+                    <!-- Javascript will inject the steps here -->
+                </div>
+            </div>
+            
+            <div id="errorArea" class="mt-6 hidden p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm font-medium">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function inspectUrl() {
+            const urlInput = document.getElementById('urlInput').value.trim();
+            const resultsArea = document.getElementById('resultsArea');
+            const chainContainer = document.getElementById('chainContainer');
+            const errorArea = document.getElementById('errorArea');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+
+            // Reset UI
+            resultsArea.classList.add('hidden');
+            errorArea.classList.add('hidden');
+            chainContainer.innerHTML = '';
+            
+            if (!urlInput) {
+                showError("Please enter a URL to inspect.");
+                return;
+            }
+
+            // Loading state
+            btnText.textContent = "Inspecting...";
+            spinner.classList.remove('hidden');
+
+            try {
+                // Call the PHP script we created
+                const response = await fetch(`trace.php?url=${encodeURIComponent(urlInput)}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                } else if (data.hops && data.hops.length > 0) {
+                    renderChain(data.hops);
+                } else {
+                    showError("Could not retrieve redirect chain.");
+                }
+            } catch (err) {
+                showError("Network error. Ensure trace.php is on the server.");
+            } finally {
+                // Reset loading state
+                btnText.textContent = "Trace Path";
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function renderChain(hops) {
+            const chainContainer = document.getElementById('chainContainer');
+            let html = '';
+
+            hops.forEach((hop, index) => {
+                const isLast = index === hops.length - 1;
+                const label = index === 0 ? "START" : (isLast ? "FINAL DESTINATION" : `HOP ${index}`);
+                const color = isLast ? "text-green-400" : "text-blue-300";
+                
+                html += `
+                    <div class="relative step-line">
+                        <div class="step-dot ${isLast ? '!bg-green-500 !shadow-[0_0_10px_#22c55e]' : ''}"></div>
+                        <div class="text-[10px] font-bold text-slate-500 mb-1 tracking-wider">${label}</div>
+                        <div class="${color} break-all bg-slate-900/50 p-2 rounded-lg border border-slate-800/50 inline-block w-full">
+                            ${hop}
+                        </div>
+                    </div>
+                `;
+            });
+
+            chainContainer.innerHTML = html;
+            document.getElementById('resultsArea').classList.remove('hidden');
+        }
+
+        function showError(message) {
+            const errorArea = document.getElementById('errorArea');
+            errorArea.textContent = message;
+            errorArea.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
